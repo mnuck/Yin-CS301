@@ -1,0 +1,55 @@
+% CS301 Computational Perception and Cognition
+% Matthew Nuckolls <matthew.nuckolls@gmail.com>
+% Michael Wisely <michaelwisely@gmail.com>
+% Project 1
+
+% Configuration
+homography_method = 'pseudo_inverse'; % ('pseudo_inverse', 'svd')
+warping_direction = 'forward';        % ('forward', 'backward')
+warping_engine    = 'for_loop';       % ('for_loop, 'interp2') 
+interpolator      = 'nearest';        % ('nearest', 'bilinear')
+
+% 1. get source and destination images
+
+% 2. manually select correspondence points
+
+% 3. compute homography matrix
+switch homography_method
+    case 'pseudo_inverse'
+        h = homography_pseudo_inverse( source_x, source_y, dest_x, dest_y );
+    case 'svd'
+        h = homography_svd( source_x, source_y, dest_x, dest_y );
+    otherwise
+        msgbox('Unknown homography method selected [' ...
+               + homography_method + '] Now exiting.', ...
+               'Unknown homography', 'error', 'modal');
+        exit();
+end
+
+% 4. warp source to destination
+switch warping_direction
+    case 'forward'
+        warped_src = warp_forward( h, source, dest, warping_engine );
+    case 'backward'
+        warped_src = warp_backward( h, source, dest, warping_engine );
+    otherwise
+        msgbox('Unknown warping method selected [' ...
+               + warping_direction + '] Now exiting.', ...
+               'Unknown warping', 'error', 'modal');
+        exit();
+end
+
+% 5. mosaic images together
+switch interpolator
+    case 'nearest'
+        result = mosaic_nearest( warped_src, dest );
+    case 'bilinear'
+        result = mosaic_bilinear( warped_src, dest );
+    otherwise
+        msgbox('Unknown warping method selected [' ...
+               + warping_direction + '] Now exiting.', ...
+               'Unknown warping', 'error', 'modal');
+        exit();        
+end
+
+%. 6. Display result
