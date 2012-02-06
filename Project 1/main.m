@@ -3,22 +3,25 @@
 % Michael Wisely <michaelwisely@gmail.com>
 % Project 1
 
+clear all; clc; close all;
+
 % Configuration
 homography_method = 'pseudo_inverse'; % ('pseudo_inverse', 'svd')
-warping_direction = 'forward';        % ('forward', 'backward')
+warping_direction = 'backward';        % ('forward', 'backward')
 warping_engine    = 'for_loop';       % ('for_loop, 'interp2') 
 interpolator      = 'nearest';        % ('nearest', 'bilinear')
 
 % 1. get source and destination images
-source_filename      = uigetfile('','First Image File');
-destination_filename = uigetfile('','Second Image File');
-source = imread(source_filename);
-dest   = imread(destination_filename);
+%source_filename      = uigetfile('','First Image File');
+%destination_filename = uigetfile('','Second Image File');
+%source = imread(source_filename);
+%dest   = imread(destination_filename);
+
+source = imread('img1.tif');
+dest   = imread('img2.tif');
 
 % 2. manually select correspondence points
 % This block borrowed from Dr Yin
-[destnr, destnc, destnb] = size(dest);
-[srcnr, srcnc, srcnb] = size(source);
 figure(1); imshow(source,[]); title('source');
 figure(2); imshow(dest,[]); title('destination');
 
@@ -60,6 +63,8 @@ switch warping_direction
         exit();
 end
 
+figure(3); imshow(warped_src, []);
+
 % 5. mosaic images together
 switch interpolator
     case 'nearest'
@@ -70,8 +75,8 @@ switch interpolator
         msgbox('Unknown warping method selected [' ...
                + warping_direction + '] Now exiting.', ...
                'Unknown warping', 'error', 'modal');
-        exit();        
+        exit();
 end
 
 %. 6. Display result
-msgbox('Imagine a pretty picture here!');
+%msgbox('Imagine a pretty picture here!');
