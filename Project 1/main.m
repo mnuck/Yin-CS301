@@ -74,3 +74,4 @@ switch interpolator
 end
 
 %. 6. Display result
+msgbox('Imagine a pretty picture here!');
