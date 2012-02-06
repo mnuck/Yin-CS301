@@ -10,8 +10,29 @@ warping_engine    = 'for_loop';       % ('for_loop, 'interp2')
 interpolator      = 'nearest';        % ('nearest', 'bilinear')
 
 % 1. get source and destination images
+source_filename      = uigetfile('','First Image File');
+destination_filename = uigetfile('','Second Image File');
+source = imread(source_filename);
+dest   = imread(destination_filename);
 
 % 2. manually select correspondence points
+% This block borrowed from Dr Yin
+[destnr, destnc, destnb] = size(dest);
+[srcnr, srcnc, srcnb] = size(source);
+figure(1); imshow(source,[]); title('source');
+figure(2); imshow(dest,[]); title('destination');
+
+figure(1);
+[source_x, source_y] = ginput;
+hold on; plot(source_x, source_y, 'rs','Markersize',12);
+text(source_x, source_y, num2str((1:length(source_x))'),'Color','r')
+hold off;
+
+figure(2);
+[dest_x, dest_y] = ginput;
+hold on; plot(dest_x, dest_y, 'gs','Markersize',12);    
+text(dest_x, dest_y, num2str((1:length(source_x))'),'Color','g');  
+hold off;
 
 % 3. compute homography matrix
 switch homography_method
