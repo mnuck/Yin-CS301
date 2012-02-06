@@ -1,7 +1,18 @@
-function [ h ] = homography_pseudo_inverse( source_x, source_y, dest_x, dest_y )
-%HOMOGRAPHY_PSEUDO_INVERSE Summary of this function goes here
-%   Detailed explanation goes here
-
-h = [];
+function [ result ] = homography_pseudo_inverse( source_x, source_y, dest_x, dest_y )
+%HOMOGRAPHY_PSEUDO_INVERSE Calculate homography matrix assuming h_33 = 1
+    vec1 = ones( length(source_x), 1 );
+    vec0 = zeros( length(source_x), 1 );
+    
+    first   = -1 * source_x .* dest_x; % column vectors
+    second  = -1 * source_x .* dest_y; % built up here for clarity
+    third   = -1 * source_y .* dest_x;
+    fourth  = -1 * source_y .* dest_y;
+    
+    A = [ source_x source_y vec1 vec0     vec0     vec0 first  third ; ...
+          vec0     vec0     vec0 source_x source_y vec1 second fourth ];
+    b = [ dest_x ; dest_y ];
+    
+    h = A \ b;
+    
+    result = [ h(1) h(2) h(3) ; h(4) h(5) h(6) ; h(7) h(8) 1 ];
 end
-
