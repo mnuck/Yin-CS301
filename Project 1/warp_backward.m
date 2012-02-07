@@ -2,7 +2,7 @@ function [ result ] = warp_backward( h, source, dest, warping_engine )
 %WARP_BACKWARD Summary of this function goes here
 %   Detailed explanation goes here
     [nrows, ncols, nbands] = size(dest);
-    result = zeros(nrows, ncols);
+    result = zeros(nrows, ncols, nbands);
     h_inv = inv(h);
     for x = 1:ncols
         for y = 1:nrows
@@ -14,7 +14,9 @@ function [ result ] = warp_backward( h, source, dest, warping_engine )
                source_y < 1 || source_y > nrows
                  continue;
             end
-            result(y, x) = source(source_y, source_x);
+            for b = 1:nbands
+                result(y, x, b) = source(source_y, source_x, b);
+            end
         end
     end
 end

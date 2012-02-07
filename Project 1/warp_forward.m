@@ -2,7 +2,7 @@ function [ result ] = warp_forward( h, source, dest, warping_engine )
 %WARP_FORWARD Summary of this function goes here
 %   Detailed explanation goes here
     [nrows, ncols, nbands] = size(source);
-    result = zeros(nrows, ncols);
+    result = zeros(nrows, ncols, nbands);
     for x = 1:ncols
         for y = 1:nrows
             source_pixel = [x ; y ; 1];
@@ -13,7 +13,9 @@ function [ result ] = warp_forward( h, source, dest, warping_engine )
                dest_y < 1 || dest_y > nrows
                 continue;
             end
-            result(dest_y, dest_x) = source(y, x);
+            for b = 1:nbands
+                result(dest_y, dest_x, b) = source(y, x, b);
+            end
         end
     end
  end
