@@ -7,8 +7,8 @@ clear all; clc; close all;
 
 % Configuration
 homography_method = 'pseudo_inverse'; % ('pseudo_inverse', 'svd')
-warping_direction = 'backward';        % ('forward', 'backward')
-warping_engine    = 'for_loop';       % ('for_loop, 'interp2') 
+warping_direction = 'backward';       % ('forward', 'backward')
+warping_engine    = 'for_loop';       % ('for_loop, 'interp2')
 interpolator      = 'nearest';        % ('nearest', 'bilinear')
 
 % 1. get source and destination images
@@ -63,7 +63,7 @@ switch warping_direction
         exit();
 end
 
-figure(3); imshow(warped_src, []);
+figure(3); imshow(uint8(warped_src), []);
 
 % 5. mosaic images together
 switch interpolator
