@@ -6,6 +6,7 @@
 clear all; clc; close all;
 
 % Configuration
+click_new_points = 'no';
 homography_method = 'svd'; % ('pseudo_inverse', 'svd')
 warping_direction = 'backward';       % ('forward', 'backward')
 warping_engine    = 'for_loop';       % ('for_loop, 'interp2')
@@ -26,13 +27,13 @@ figure(1); imshow(source,[]); title('source');
 figure(2); imshow(dest,[]); title('destination');
 
 figure(1);
-[source_x, source_y] = ginput;
+[source_x, source_y] = get_points(click_new_points, 'src');
 hold on; plot(source_x, source_y, 'rs','Markersize',12);
 text(source_x, source_y, num2str((1:length(source_x))'),'Color','r')
 hold off;
 
 figure(2);
-[dest_x, dest_y] = ginput;
+[dest_x, dest_y] = get_points(click_new_points, 'dest');
 hold on; plot(dest_x, dest_y, 'gs','Markersize',12);    
 text(dest_x, dest_y, num2str((1:length(source_x))'),'Color','g');  
 hold off;
