@@ -1,4 +1,4 @@
-function [ result ] = warp_forward( h, source, dest, warping_engine )
+function [ result, offset_x, offset_y ] = warp_forward( h, source, dest, warping_engine )
 %WARP_FORWARD Summary of this function goes here
     [nrows, ncols, nbands] = size(source);
     

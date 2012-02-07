@@ -53,9 +53,11 @@ end
 % 4. warp source to destination
 switch warping_direction
     case 'forward'
-        warped_src = warp_forward( h, source, dest, warping_engine );
+        [warped_src, offset_x, offset_y] = ...
+            warp_forward( h, source, dest, warping_engine );
     case 'backward'
-        warped_src = warp_backward( h, source, dest, warping_engine );
+        [warped_src, offset_x, offset_y] = ...
+            warp_backward( h, source, dest, warping_engine );
     otherwise
         msgbox('Unknown warping method selected [' ...
                + warping_direction + '] Now exiting.', ...
