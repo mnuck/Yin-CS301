@@ -1,22 +1,22 @@
 function [ result ] = warp_backward( h, source, dest, warping_engine )
 %WARP_BACKWARD Summary of this function goes here
-%   Detailed explanation goes here
-    [nrows, ncols, nbands] = size(dest);
-    result = zeros(nrows, ncols, nbands);
-    h_inv = inv(h);
-    for x = 1:ncols
-        for y = 1:nrows
-            dest_pixel = [x ; y ; 1];
-            source_pixel = h_inv * dest_pixel;
-            source_x = round( source_pixel(1) / source_pixel(3) );
-            source_y = round( source_pixel(2) / source_pixel(3) );
+    [nrows, ncols, nbands] = size(source);
+    
+    % find the corners
+    [size_x, size_y, offset_x, offset_y] = find_corners( h, ncols, nrows );
+    result = zeros(size_y, size_x, nbands);
+    h_inv = inv(h);    
+    for x = 1:size_x
+        for y = 1:size_y
+            [source_x source_y] = straighten(h_inv * [x ; y ; 1]);
+            source_x = round(source_x) + offset_x + 1;
+            source_y = round(source_y) + offset_y + 1;
             if source_x < 1 || source_x > ncols || ...
                source_y < 1 || source_y > nrows
                  continue;
             end
-            for b = 1:nbands
-                result(y, x, b) = source(source_y, source_x, b);
-            end
+            result( y, x, : ) = source(source_y, source_x, :);
         end
     end
 end
+
