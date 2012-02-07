@@ -6,7 +6,7 @@
 clear all; clc; close all;
 
 % Configuration
-homography_method = 'pseudo_inverse'; % ('pseudo_inverse', 'svd')
+homography_method = 'svd'; % ('pseudo_inverse', 'svd')
 warping_direction = 'backward';       % ('forward', 'backward')
 warping_engine    = 'for_loop';       % ('for_loop, 'interp2')
 interpolator      = 'nearest';        % ('nearest', 'bilinear')
