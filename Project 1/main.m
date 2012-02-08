@@ -10,7 +10,7 @@ click_new_points = 'no';
 homography_method = 'svd'; % ('pseudo_inverse', 'svd')
 warping_direction = 'backward';       % ('forward', 'backward')
 warping_engine    = 'for_loop';       % ('for_loop, 'interp2')
-interpolator      = 'nearest';        % ('nearest', 'bilinear')
+interpolator      = 'bilinear';        % ('nearest', 'bilinear')
 
 % 1. get source and destination images
 %source_filename      = uigetfile('','First Image File');
@@ -71,9 +71,9 @@ figure(3); imshow(uint8(warped_src), []);
 % 5. mosaic images together
 switch interpolator
     case 'nearest'
-        result = mosaic_nearest( warped_src, dest );
+        result = mosaic_nearest( warped_src, dest, offset_x, offset_y );
     case 'bilinear'
-        result = mosaic_bilinear( warped_src, dest );
+        result = mosaic_bilinear( warped_src, dest, offset_x, offset_y );
     otherwise
         msgbox('Unknown warping method selected [' ...
                + warping_direction + '] Now exiting.', ...
@@ -81,5 +81,11 @@ switch interpolator
         exit();
 end
 
+figure(4); imshow(uint8(result), []);
+% plot the offset point
+hold on; plot(-offset_x, -offset_y, 'rs','Markersize',12);
+hold off;
+
 %. 6. Display result
 %msgbox('Imagine a pretty picture here!');
+display 'Done! :D'
