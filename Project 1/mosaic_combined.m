@@ -36,10 +36,10 @@ function [ mosaic ] = mosaic_combined( image1, image2, i1_mask, ...
     image2_center = [ round( i2_size(1)/2 + a2 ) ...
                       round( i2_size(2)/2 + b2 ) ];
   
-    %then, anywhere mask == 2, blend those pixels
+    %then, anywhere mask > 1, blend those pixels
     for y = 1:y_max-y_min
         for x = 1:x_max-x_min
-            if mask(y,x,1) == 2
+            if mask(y,x,1) > 1
                 weight = calc_weight([y x], image1_center, image2_center);
                 pixel1 = image1(1+(y-a1), 1+(x-b1), :);
                 pixel2 = image2(1+(y-a2), 1+(x-b2), :);
