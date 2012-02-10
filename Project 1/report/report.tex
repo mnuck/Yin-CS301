@@ -327,16 +327,19 @@ options are provided at the beginning of main.m.
   warp\_backward.m.
 \end{description}
 
-%% TODO Add something about masks
+\paragraph{Image Masking}
+The mosaic function needs a way to determine if a pixel in an input image has valid data. A first attempt used the heuristic where any black pixel was assumed to be invalid. This happens to work for the input data provided, however some of the data we generated included black windows on buildings, leading to odd artifacts in the final image. Our next attempt used the concept of an image mask. An image mask is an auxillary array of pixels, paired up with a given image. Anywhere the image data is valid, the mask contains a one. Anywhere the image data is invalid due to it actually being a black border location with no real physical meaning, the mask contains a zero. Before using image pixel data, the mosaic function consults the mask to determine the validity of that data.
 
 \section{Experimental Observations}
-%% TODO Make sure this is correct 
+%% TODO Make sure this is correct
 Overall, things turned out the way we expected. This project was fun
 and interesting to work on, though neither of us are huge fans of
 MATLAB. We decided that MATLAB is a great tool for image processing
 because of its vector and matrix features, allowing for complex
 slicing and manipulation of those data structures. These features
-allowed for easier and faster manipulation of images.
+allowed for easier and faster manipulation of images. However for future projects, we are considering using python with numpy instead. We would lose the ability to use instructor code outright, however a cursory glance at our submitted code shows that very little instructor code can be found in our final product anyway.
+
+
 
 %% TODO Gah. I am running out of brain
 
