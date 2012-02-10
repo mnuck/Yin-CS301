@@ -6,7 +6,7 @@
 clear all; clc; close all;
 
 % Configuration
-click_new_points  = 'no';
+click_new_points  = 'yes';
 homography_method = 'pseudo_inverse';        % ('pseudo_inverse', 'svd')
 warping_method    = 'backward';    % ('forward', 'backward', 'interp2')
 interpolator      = 'nearest';    % ('nearest', 'blended')
@@ -22,8 +22,8 @@ else
     destination_filename = 'img2.tif';
 end
 
-    source = imread(source_filename);
-        dest   = imread(destination_filename);
+source = imread(source_filename);
+dest   = imread(destination_filename);
 
 
 % 2. manually select correspondence points
