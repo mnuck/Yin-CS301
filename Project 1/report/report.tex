@@ -31,6 +31,11 @@ project also allowed developers to compare the different algorithms
 that were used to compute homography matrices, warp images, and stitch
 images together.
 
+\begin{figure}[here]
+\includegraphics[width=\textwidth]{../pics/snow-backward-bilinear-warp.jpg}
+\caption{Image Warping}
+\end{figure}
+
 \section{Homographies}
 The purpose of a homography in this context is to map points from one
 projected plane in an image to points in a projected plane from a
@@ -248,7 +253,7 @@ method. The bilinear backward warped image looks smoother.
 \begin{figure}[here]
 \includegraphics[width=\textwidth]{../pics/snow-svd-backward-bilinear-nearest.jpg}
 \caption{Backward Warping with Bilinear Interpolation, 
-  SVD Homography, and Blended Mosaic}
+  SVD Homography, and Nearest Mosaic}
 \label{fig:backwardBilinearWarping}
 \end{figure}
 
@@ -276,6 +281,72 @@ cropped part of our image, the resulting mosaic image appeared
 strange. The backward warping method with bilinear interpolation
 produced the best warped mosaic.
 
+\section{Mosaic}
+After warping a source image to match the same projected plane as the
+destination image, one must put the two images together. We used two
+different methods to accomplish this. The ``nearest'' method (Figure
+~\ref{fig:backwardBiliniearWarping}) considers the area where the two
+images overlap, and for each pixel, determines whether the source
+pixel or the destination pixel should be chosen based on whether it is
+closer to the source's center of mass or the destination's center of
+mass. Similarly, the ``blended'' method (Figure
+~\ref{fig:forwardWarping}) considers overlapping areas, but takes a
+weighted average of the source and destination pixels at that spot and
+adds that result to the mosaic.
 
+\section{Design Decisions}
+The general flow of the program can be seen in Figure ~\ref{fig:flowChart}.
+
+\begin{figure}[here]
+\includegraphics[width=.8\textwidth]{./flowchart.jpg}
+\caption{High Level Flow Control}
+\label{fig:flowChart}
+\end{figure}
+
+\paragraph{User Configuration}
+To make this program flexible for the user, several configuration
+options are provided at the beginning of main.m.
+
+\begin{description}
+\item[click\_new\_points] \hfill \\
+  Can be {\bf yes} or {\bf no}. If yes, the program will prompt the user
+  for image files to warp together, and it will ask them to manually
+  select points in those images. If no, the program will use the default
+  ``snow'' images and use preselected points. The no option is for
+  debugging.
+  
+\item[homography\_method] \hfill \\
+  Can be {\bf pseudo\_inverse} or {\bf svd}. Determines which method
+  should be used to calculate the homography matrix.
+  
+\item[warping\_method] \hfill \\
+  Can be {\bf forward}, {\bf backward}, or {\bf interp2}. This option
+  allows the user to decide which warping method to use. The default
+  interpolation for backward warping is ``bilinear'', but it can be
+  changed to the blocker ``nearest'' by uncommenting a line in
+  warp\_backward.m.
+\end{description}
+
+%% TODO Add something about masks
+
+\section{Experimental Observations}
+%% TODO Make sure this is correct 
+Overall, things turned out the way we expected. This project was fun
+and interesting to work on, though neither of us are huge fans of
+MATLAB. We decided that MATLAB is a great tool for image processing
+because of its vector and matrix features, allowing for complex
+slicing and manipulation of those data structures. These features
+allowed for easier and faster manipulation of images.
+
+%% TODO Gah. I am running out of brain
+
+\section{Group Contribution}
+\paragraph{Matt}
+Matt developed the homography computation code, the warping code, and
+the main MATLAB script. He also contributed to the report.
+
+\paragraph{Michael}
+Michael worked on the mosaic code and contributed to the warping
+code. He worked on much of the report.
 
 \end{document}
