@@ -6,11 +6,11 @@
 clear all; clc; close all;
 
 % Configuration
-click_new_points = 'no';
+click_new_points  = 'no';
 homography_method = 'svd'; % ('pseudo_inverse', 'svd')
-warping_direction = 'backward';       % ('forward', 'backward')
+warping_direction = 'forward';       % ('forward', 'backward')
 warping_engine    = 'for_loop';       % ('for_loop, 'interp2')
-interpolator      = 'blended';        % ('nearest', 'blended')
+interpolator      = 'nearest';        % ('nearest', 'blended')
 
 % 1. get source and destination images
 %source_filename      = uigetfile('','First Image File');
@@ -54,10 +54,10 @@ end
 % 4. warp source to destination
 switch warping_direction
     case 'forward'
-        [warped_src, offset_x, offset_y] = ...
+        [warped_src, offset_x, offset_y, src_mask] = ...
             warp_forward( h, source, dest, warping_engine );
     case 'backward'
-        [warped_src, offset_x, offset_y] = ...
+        [warped_src, offset_x, offset_y, src_mask] = ...
             warp_backward( h, source, dest, warping_engine );
     otherwise
         msgbox('Unknown warping method selected [' ...
@@ -71,10 +71,10 @@ figure(3); imshow(uint8(warped_src), []);
 % 5. mosaic images together
 switch interpolator
     case 'nearest'
-        result = mosaic_combined( warped_src, dest, ... 
+        result = mosaic_combined( warped_src, dest, src_mask, ... 
                                   [offset_y offset_x], [0, 0], interpolator );
     case 'blended'
-        result = mosaic_combined( warped_src, dest, ... 
+        result = mosaic_combined( warped_src, dest, src_mask, ... 
                                   [offset_y offset_x], [0, 0], interpolator );
     otherwise
         msgbox('Unknown warping method selected [' ...

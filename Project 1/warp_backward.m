@@ -1,10 +1,11 @@
-function [ result, offset_x, offset_y ] = warp_backward( h, source, dest, warping_engine )
+function [ result, offset_x, offset_y, mask ] = warp_backward( h, source, dest, warping_engine )
 %WARP_BACKWARD Summary of this function goes here
     [nrows, ncols, nbands] = size(source);
     
     % find the corners
     [size_x, size_y, offset_x, offset_y] = find_corners( h, ncols, nrows );
     result = zeros(size_y, size_x, nbands);
+    mask = zeros(size_y, size_x);
     h_inv = inv(h);
     for x = 1:size_x
         for y = 1:size_y
@@ -20,6 +21,7 @@ function [ result, offset_x, offset_y ] = warp_backward( h, source, dest, warpin
             dx = source_x - floor(source_x);
             dy = source_y - floor(source_y);
             result( y, x, : ) = my_bilinear( dx, dy, ul, ur, ll, lr );
+            mask( y, x ) = 1;
         end
     end
 end
