@@ -11,6 +11,9 @@ function [ result ] = homography_pseudo_inverse( source_x, source_y, dest_x, des
     A = [ source_x source_y vec1 vec0     vec0     vec0 first  third ; ...
           vec0     vec0     vec0 source_x source_y vec1 second fourth ];
     b = [ dest_x ; dest_y ];
+    
     h = A \ b;
+    % h = inv(A' * A) * (A' * b);
+    
     result = transpose([h(1:3) h(4:6) [h(7:8) ; 1]]);
 end
