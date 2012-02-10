@@ -6,19 +6,19 @@
 clear all; clc; close all;
 
 % Configuration
-click_new_points  = 'no';
+click_new_points  = 'yes';
 homography_method = 'svd';        % ('pseudo_inverse', 'svd')
-warping_method    = 'backward';   % ('forward', 'backward', 'interp2')
-interpolator      = 'blended';    % ('nearest', 'blended')
+warping_method    = 'backward';    % ('forward', 'backward', 'interp2')
+interpolator      = 'nearest';    % ('nearest', 'blended')
 
 % 1. get source and destination images
-%source_filename      = uigetfile('','First Image File');
-%destination_filename = uigetfile('','Second Image File');
-%source = imread(source_filename);
-%dest   = imread(destination_filename);
+source_filename      = uigetfile('','First Image File');
+destination_filename = uigetfile('','Second Image File');
+source = imread(source_filename);
+dest   = imread(destination_filename);
 
-source = imread('img1.tif');
-dest   = imread('img2.tif');
+%source = imread('img1.tif');
+%dest   = imread('img2.tif');
 
 % 2. manually select correspondence points
 % This block borrowed from Dr Yin
@@ -49,6 +49,10 @@ switch homography_method
                'Unknown homography', 'error', 'modal');
         exit();
 end
+
+%h1 = homography_pseudo_inverse( source_x, source_y, dest_x, dest_y )
+%h2 = homography_svd( source_x, source_y, dest_x, dest_y )
+
 
 % 4. warp source to destination
 switch warping_method
