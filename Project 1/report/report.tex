@@ -231,8 +231,8 @@ directly on a pixel. Instead, we will likely land at a location that
 is between pixels. 
 
 To determine the color value for a pixel in the warped image, we have
-several options. The easiest option is to take the floor of the x and
-y coordinates of the result, and use that color value. This is called
+several options. The easiest option is to round the x and
+y coordinates of the result, and use that color value found at that pixel. This is called
 the \emph{nearest} interpolation method (see Figure
 ~\ref{fig:backwardNearestWarping}). The other option is to take a
 weigted average of the pixels surrounding the calculated
