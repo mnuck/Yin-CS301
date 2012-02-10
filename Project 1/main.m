@@ -7,10 +7,9 @@ clear all; clc; close all;
 
 % Configuration
 click_new_points  = 'no';
-homography_method = 'svd'; % ('pseudo_inverse', 'svd')
-warping_direction = 'forward';       % ('forward', 'backward')
-warping_engine    = 'for_loop';       % ('for_loop, 'interp2')
-interpolator      = 'nearest';        % ('nearest', 'blended')
+homography_method = 'svd';        % ('pseudo_inverse', 'svd')
+warping_method    = 'forward';    % ('forward', 'backward', 'interp2')
+interpolator      = 'nearest';    % ('nearest', 'blended')
 
 % 1. get source and destination images
 %source_filename      = uigetfile('','First Image File');
@@ -52,13 +51,13 @@ switch homography_method
 end
 
 % 4. warp source to destination
-switch warping_direction
+switch warping_method
     case 'forward'
         [warped_src, offset_x, offset_y, src_mask] = ...
-            warp_forward( h, source, dest, warping_engine );
+            warp_forward( h, source );
     case 'backward'
         [warped_src, offset_x, offset_y, src_mask] = ...
-            warp_backward( h, source, dest, warping_engine );
+            warp_backward( h, source );
     otherwise
         msgbox('Unknown warping method selected [' ...
                + warping_direction + '] Now exiting.', ...

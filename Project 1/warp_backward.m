@@ -1,4 +1,4 @@
-function [ result, offset_x, offset_y, mask ] = warp_backward( h, source, dest, warping_engine )
+function [ result, offset_x, offset_y, mask ] = warp_backward( h, source )
 %WARP_BACKWARD Summary of this function goes here
     [nrows, ncols, nbands] = size(source);
     
@@ -16,11 +16,17 @@ function [ result, offset_x, offset_y, mask ] = warp_backward( h, source, dest, 
                source_y < 1 || source_y > nrows
                  continue;
             end
+            % implements bilinear blending
             [ul, ur, ll, lr] = ...
                 get_neighbor_values( source, source_x, source_y );
             dx = source_x - floor(source_x);
             dy = source_y - floor(source_y);
             result( y, x, : ) = my_bilinear( dx, dy, ul, ur, ll, lr );
+            
+            % implements nearest neighbor
+            %result( y, x, : ) = source( round(source_y), round(source_x), : );
+            
+            % sets mask for later processing
             mask( y, x ) = 1;
         end
     end
