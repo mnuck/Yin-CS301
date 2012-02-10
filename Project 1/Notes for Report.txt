@@ -1,0 +1,90 @@
+Compare your resultant homography matrices using the two methods.
+
+Try different image pairs, different sets of cooresponding points and
+summarize your observations and understanding of homography matrix
+computation.
+
+Show forward, backward nearest, backward bilinear, interp2. Summarize
+observations.
+
+Create a mosaic.
+
+a) Brief summary of what you think the project was about (what was the task; what were you trying to achieve),
+
+This project served multiple purposes. Most importantly, it showcased
+the ability of the authors to perform image manipulations based on
+mathematical principles learned in class. Of secondary importance,
+it introduced us to an unfamiliar language and development environment.
+
+
+b) Brief outline of the algorithmic approach (e.g., a flowchart showing the flow of control and subroutine structure of your code),
+
+main.m
+1. contains the configuration block
+2. gets the image files
+2.a. either by use of the standard GUI file opener
+2.b. or directly opening a pair of image files by name
+3. selects coorespondence points
+3.a. either by use of code developed by Dr Yin for graphical point selection
+3.b. or using a get_points() method developed by the authors to handle saved points
+4. computes homography matrix via
+4.a. homography_pseudo_inverse()
+4.b. or homography_svd()
+5. warps the first image into the coordinate system of the second image
+5.a. warp_forward()
+5.b. warp_backward()
+5.b.1. using either a nearest neighbor calculation
+5.b.2. or my_bilinear()
+5.c. warp_interp2() 
+
+Note that 5.a. and 5.b. construct an image canvas large enough to
+contain the entire warped image and translates the image as necessary
+to ensure all pixels will fit, while 5.c. does not perform image
+translation. Given more time, the authors believe they could modify
+warp_interp2() to do so, however this was not part of the assignment.
+
+6. the images are then combined by mosiac_combined(). pixels in the overlapping region are decided either by
+6.a. using the pixel from the 'nearest' image, nearest meaning closest center, or
+6.b. blending the conflicting pixels together, resulting in ghost images.
+
+c) Pictures of intermediate and final results that convince me that the program does what you think it does.
+
+bunch of pics going in the pics folder.
+
+d) Any design decisions you had to make, for example whether using preconditioning on the homegraphy matrix estimation or not. Be sure to document any additional features you added to increase robustness or generality of your codes.
+
+The modular structure of main.m allowed the authors to quickly add and 
+test new functions without disturbing the overall flow. In several
+places this required functions to return metadata that would be
+needed by the next function in the chain. 
+
+For example, the warped
+image contains black borders. No information is conveyed by the color
+of these pixels, in case of overlap in the mosaic the blackness should
+not be construed as actual information about the scene. However the
+authors could not determine a reliable way to discriminate between a
+pixel that is black because it is part of a border and a pixel that
+is truly black because the source image is black. Therefore the
+image warping function also returns a mask, showing which pixels have
+meaning. The mosaic function uses this mask to determine which pixels
+should not take part in any calculations.
+
+Another example of image metadata is the offsets. The images themselves
+carry no information regarding the relationship between image origin
+and world origin. This relationship is necessary to properly locate
+the images in space and thereby stitch them together. The image
+warping functions calculate the offset of each image from an arbitrary
+world origin and pass that information back for use in the mosaic
+function.
+
+e) Experimental observations. What do you observe about the behavior of your program when you run it? Does it seem to work the way you think it should? Play around a little with different setting to see what happens.
+
+f) A description of what each group member contributed to the final program or report, to discourage slackerism!!!
+
+A git repository containing the complete history of the project is available at https://mnuck@github.com/mnuck/Yin-CS301.git and is viewable via web browser at https://github.com/mnuck/Yin-CS301.
+
+As evidenced by the code repository, Nuckolls wrote the majority of the
+code for this first project, while Wisely managed the final report. The
+authors have a history of working together, so while Nuckolls carried
+Wisely on this project, Wisely has carried Nuckolls in the past and
+will very likely do so again in the future.
