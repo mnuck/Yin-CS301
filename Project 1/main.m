@@ -6,19 +6,25 @@
 clear all; clc; close all;
 
 % Configuration
-click_new_points  = 'yes';
-homography_method = 'svd';        % ('pseudo_inverse', 'svd')
+click_new_points  = 'no';
+homography_method = 'pseudo_inverse';        % ('pseudo_inverse', 'svd')
 warping_method    = 'backward';    % ('forward', 'backward', 'interp2')
 interpolator      = 'nearest';    % ('nearest', 'blended')
 
 % 1. get source and destination images
-source_filename      = uigetfile('','First Image File');
-destination_filename = uigetfile('','Second Image File');
-source = imread(source_filename);
-dest   = imread(destination_filename);
 
-%source = imread('img1.tif');
-%dest   = imread('img2.tif');
+
+if strcmp(click_new_points, 'yes')
+    source_filename      = uigetfile('','First Image File');
+    destination_filename = uigetfile('','Second Image File');
+else
+    source_filename = 'img1.tif';
+    destination_filename = 'img2.tif';
+end
+
+    source = imread(source_filename);
+        dest   = imread(destination_filename);
+
 
 % 2. manually select correspondence points
 % This block borrowed from Dr Yin
