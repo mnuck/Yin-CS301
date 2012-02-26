@@ -16,9 +16,9 @@ CXX = /usr/bin/g++
 
 # Generic GNU g++ compiler flags
 CXXFLAGS = -g -Wall -W -pedantic-errors \
-	-lm -lcv -lhighgui -lcvaux \
-	-I /opt/local/include/opencv \
-	-L /opt/local/lib/  \
+	-I /usr/include/opencv \
+	-L /usr/lib  \
+	-lm -lcv -lhighgui -lcvaux 
 
 # Files to compile
 SOURCES = $(wildcard *.cpp)
@@ -30,7 +30,7 @@ OBJECTS = $(SOURCES:%.cpp=%.o)
 # Define a rule for turning .cpp's into .o's
 %.o: %.cpp
 	@echo "Compiling $<"
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Default target
 default: all
@@ -38,7 +38,7 @@ default: all
 all: stereo
 
 # Executable's target
-stereo: ${OBJECTS} stereo
+stereo: ${OBJECTS}
 	${CXX} ${CXXFLAGS} ${OBJECTS} -o $@
 	-@echo "._. <(done)"
 
