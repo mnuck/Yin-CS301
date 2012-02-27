@@ -20,13 +20,17 @@ void intensity_normalize(const Mat& matrix, Mat& normalized) {
   Mat stddev_mat;
 
   meanStdDev(matrix, mean, stddev);
-  cout << "mean: " << mean << " stddev: " << stddev << endl;
   stddev_mat = Mat(matrix.size(), matrix.type(), stddev);
-  divide(matrix-mean, stddev_mat, normalized);
+  normalized = (matrix - mean) / stddev_mat;
 }
 
 double NCC(const Mat& f, const Mat& g){
-  return f.dot(g);
+  Mat f_hat, g_hat; 
+
+  intensity_normalize(f, f_hat);
+  intensity_normalize(g, g_hat);
+
+  return f_hat.dot(g_hat);
 }
 
 Mat match_epipolar_lines(const Mat& f, const Mat& g, const int half_patch_height=4){
@@ -34,6 +38,7 @@ Mat match_epipolar_lines(const Mat& f, const Mat& g, const int half_patch_height
   int patch_height = half_patch_height*2+1;
   double largest_score;
   int largest_index;
+  int search_tolerance = 64;
 
   namedWindow("matchresult", CV_WINDOW_AUTOSIZE);
   imshow("matchresult", result);
@@ -42,15 +47,18 @@ Mat match_epipolar_lines(const Mat& f, const Mat& g, const int half_patch_height
     cout << "Computing row: " << i << endl;
     for(int j = 0; j < f.cols-patch_height; j++) {
       Mat f_patch = f(Range(i, i + patch_height), Range(j, j + patch_height));
-      for(int k = 0; k < (g.cols-patch_height); k++) {
+      bool run_once = false;
+      for(int k = (j >= search_tolerance? j-search_tolerance : 0); 
+          k < j+search_tolerance && k < (g.cols-patch_height); k++) {
         Mat g_patch = g(Range(i, i + patch_height), Range(k, k + patch_height));
         double score = NCC(f_patch, g_patch);
-        if(score > largest_score || k == 0){
+        if(score > largest_score || !run_once){
+          run_once = true;
           largest_score = score;
           largest_index = k;
         }
       }
-      result.at<signed long>(i, j) = (signed long)abs(largest_index - j);
+      result.at<signed long>(i, j) = (signed long)abs(largest_index - j)*3;
     }
     Mat temp = result.clone();
     rectangle(temp, Point(0, i), Point(patch_height+1, i+patch_height+1),
@@ -104,14 +112,14 @@ int main(int argc, char *argv[])
        << "Channels: " << channels << endl;    
 
   Mat left_norm, right_norm;
-  intensity_normalize(left_image, left_norm);
-  intensity_normalize(right_image, right_norm);
+  // intensity_normalize(left_image, left_norm);
+  // intensity_normalize(right_image, right_norm);  
 
-  left_image.convertTo(left_image, CV_8U);
-  namedWindow("left_imageWin", CV_WINDOW_AUTOSIZE);
-  imshow("left_imageWin", left_image);
+  // left_image.convertTo(left_image, CV_8U);
+  // namedWindow("left_imageWin", CV_WINDOW_AUTOSIZE);
+  // imshow("left_imageWin", left_image);
   
-  Mat match = match_epipolar_lines(left_norm, right_norm, 3);
+  Mat match = match_epipolar_lines(left_image, right_image, 5);
 
   // show the image
   namedWindow("matchWin", CV_WINDOW_AUTOSIZE);
