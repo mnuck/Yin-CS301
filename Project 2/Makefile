@@ -14,8 +14,8 @@
 # C++ compiler
 CXX = /usr/bin/g++
 
-INCLUDES = `pkg-config --cflags opencv`
-LIBS     = `pkg-config --libs opencv`
+INCLUDES = $(shell pkg-config --cflags opencv)
+LIBS     = $(shell pkg-config --libs opencv)
 
 # Generic GNU g++ compiler flags
 CXXFLAGS = -g -Wall -W $(INCLUDES) $(LIBS)

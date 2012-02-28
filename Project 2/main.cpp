@@ -34,14 +34,15 @@ double NCC(const Mat& f, const Mat& g){
 }
 
 Mat match_epipolar_lines(const Mat& f, const Mat& g, const int half_patch_height=4){
-  Mat result(f.size(), CV_32SC1, Scalar(0));
+  Mat result(f.size(), CV_8U, Scalar(0));
+  Mat temp;
+
   int patch_height = half_patch_height*2+1;
   double largest_score;
   int largest_index;
   int search_tolerance = 64;
 
   namedWindow("matchresult", CV_WINDOW_AUTOSIZE);
-  imshow("matchresult", result);
 
   for(int i = 0; i < f.rows-patch_height; i++) {
     cout << "Computing row: " << i << endl;
@@ -58,21 +59,16 @@ Mat match_epipolar_lines(const Mat& f, const Mat& g, const int half_patch_height
           largest_index = k;
         }
       }
-      result.at<signed long>(i, j) = (signed long)abs(largest_index - j)*3;
+      result.at<unsigned char>(i, j) = (unsigned char)abs(largest_index - j)*3;
     }
-    Mat temp = result.clone();
-    rectangle(temp, Point(0, i), Point(patch_height+1, i+patch_height+1),
-              Scalar(255));
-    temp.convertTo(temp, CV_8U);
+
+    result.convertTo(temp, CV_8U);
     imshow("matchresult", temp);
-    waitKey(10);
+    waitKey(1);
   }
   return result;
 }
 
-
-// void DSI(const Mat& f, const Mat& g, Mat& dest) {
-// }
 
 int main(int argc, char *argv[])
 {
@@ -111,14 +107,6 @@ int main(int argc, char *argv[])
        << "Width: " << width << endl
        << "Channels: " << channels << endl;    
 
-  Mat left_norm, right_norm;
-  // intensity_normalize(left_image, left_norm);
-  // intensity_normalize(right_image, right_norm);  
-
-  // left_image.convertTo(left_image, CV_8U);
-  // namedWindow("left_imageWin", CV_WINDOW_AUTOSIZE);
-  // imshow("left_imageWin", left_image);
-  
   Mat match = match_epipolar_lines(left_image, right_image, 5);
 
   // show the image
