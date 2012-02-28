@@ -14,11 +14,11 @@
 # C++ compiler
 CXX = /usr/bin/g++
 
+INCLUDES = `pkg-config --cflags opencv`
+LIBS     = `pkg-config --libs opencv`
+
 # Generic GNU g++ compiler flags
-CXXFLAGS = -g -Wall -W -pedantic-errors \
-	-I /usr/include/opencv \
-	-L /usr/lib  \
-	-lm -lcv -lhighgui -lcvaux 
+CXXFLAGS = -g -Wall -W $(INCLUDES) $(LIBS)
 
 # Files to compile
 SOURCES = $(wildcard *.cpp)
