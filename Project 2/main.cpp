@@ -86,22 +86,30 @@ void compute_cost_matrix(const Mat& dsi, Mat& costs, Mat& paths,
 }
 
 double NCC(const Mat& f, const Mat& g){
-  return 1-f.dot(g);
+  Mat f_hat, g_hat;
+  intensity_normalize(f, f_hat);
+  intensity_normalize(g, g_hat);
+  return 1-f_hat.dot(g_hat);
 }
 
 void DSI_method(const Mat& left, const Mat& right, 
                 Mat& dest, const int half_patch_height=4){
   int patch_height = half_patch_height*2+1;
 
-  dest = Mat(left.rows, right.rows, CV_32SC1, Scalar(0));
+  dest = Mat(left.rows, right.rows, CV_8U, Scalar(255));
 
-  // for(int i = 0; i < left.rows-patch_height; i++) {
-  for(int i = 0; i < 1; i++) {
+  namedWindow("pathWin", CV_WINDOW_AUTOSIZE);
+  namedWindow("costWin", CV_WINDOW_AUTOSIZE);
+  namedWindow("accWin", CV_WINDOW_AUTOSIZE);
+
+  for(int i = 0; i < left.rows-patch_height; i++) {
     Mat l_row, r_row; 
     Mat dsi(left.cols, right.cols, CV_32FC1, Scalar(INFINITY));
 
-    intensity_normalize(left.rowRange(i, i+patch_height), l_row);
-    intensity_normalize(right.rowRange(i, i+patch_height), r_row);
+    // intensity_normalize(left.rowRange(i, i+patch_height), l_row);
+    // intensity_normalize(right.rowRange(i, i+patch_height), r_row);
+    l_row = left.rowRange(i, i+patch_height);
+    r_row = right.rowRange(i, i+patch_height);
 
     for(int j = 0; j < left.cols-patch_height; j++) {
       Mat l_patch = l_row.colRange(j, j + patch_height);
@@ -117,12 +125,12 @@ void DSI_method(const Mat& left, const Mat& right,
          << " Max score: " << max
          << " Min score: " << min << endl;
 
-    Mat costs, paths, temp(dsi.size(), CV_8UC3);
+    Mat costs, paths;
     compute_cost_matrix(dsi, costs, paths);
 
-    cout << "Non-zero: " << countNonZero(paths) << endl;
-    cout << "Zero: " << paths.cols*paths.rows-countNonZero(paths) << endl;
 
+    // Draw Paths
+    Mat temp(paths.size(), CV_8UC3);
     for (int y = 0; y < dsi.rows; y++){
       for (int x = 0; x < dsi.cols; x++){
         Point pt = Point(x, y);
@@ -148,52 +156,44 @@ void DSI_method(const Mat& left, const Mat& right,
       }
     }
 
-    namedWindow("paths", CV_WINDOW_AUTOSIZE);
-
     bool done = false;
     int x=paths.cols-patch_height-1, y=paths.rows-patch_height-1;
     while(!done){
       Point pt = Point(x, y);
       unsigned char val = paths.at<unsigned char>(pt);
+
+      dest.at<unsigned char>(i, x) = (unsigned char)abs((y - x)*255/64);
+
+      // Add path to image
+      rectangle(temp, pt, pt, Scalar(0, 255, 255));
+
       switch (val){
-      case 0:
-        cout << "DONE!" << endl;
+      case DONE:
         done = true;
         break;
-      case 1:
+      case MATCH:
         x--; y--;
         break;
-      case 2:
+      case OCCLUDED_FROM_LEFT:
         x--;
         break;
-      case 3:
+      case OCCLUDED_FROM_RIGHT:
         y--;
         break;
       default:
         cout << "OH NO!" << endl;
         break;
       }
-      rectangle(temp, pt, pt, Scalar(0, 255, 255));
-      rectangle(costs, pt, pt, Scalar(0, 255, 255));
-      imshow("paths", temp);
     }
 
-
-    temp = dsi;
-    temp.convertTo(temp, CV_8U);
-    namedWindow("dsi", CV_WINDOW_AUTOSIZE);
-    imshow("dsi", temp);
-
-    minMaxLoc(costs, &min, &max);
-    cout << "min " << min << " max " << max << endl;
-    temp = 255*(costs+abs(min))/(30000+abs(min));
-    temp.convertTo(temp, CV_8U);
-    namedWindow("costs", CV_WINDOW_AUTOSIZE);
-    imshow("costs", temp);
-    
-
-    cout << "Waiting for key press" << endl;
-    waitKey(0);
+    // Show path image
+    Mat temp2, temp3;
+    costs.convertTo(temp2, CV_8U);
+    dest.convertTo(temp3, CV_8U);
+    imshow("pathWin", temp);
+    imshow("costWin", temp2);
+    imshow("accWin", temp3);
+    waitKey(1);
   }  
 }
 
@@ -273,16 +273,16 @@ int main(int argc, char *argv[])
   // Mat match = match_epipolar_lines(left_image, right_image, 5);
 
   Mat dsi;
-  DSI_method(left_image, right_image, dsi);
+  DSI_method(left_image, right_image, dsi, 5);
 
-  // // show the image
-  // namedWindow("dsiWin", CV_WINDOW_AUTOSIZE);
-  // dsi.convertTo(dsi, CV_8U);
-  // imshow("dsiWin", dsi);
+  // show the image
+  namedWindow("dsiWin", CV_WINDOW_AUTOSIZE);
+  dsi.convertTo(dsi, CV_8U);
+  imshow("dsiWin", dsi);
 
-  // // wait for a key
-  // cout << "Waiting for key press" << endl;
-  // waitKey(0);
+  // wait for a key
+  cout << "Waiting for key press" << endl;
+  waitKey(0);
 
   return 0;
 }

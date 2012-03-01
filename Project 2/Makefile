@@ -18,7 +18,7 @@ INCLUDES = $(shell pkg-config --cflags opencv)
 LIBS     = $(shell pkg-config --libs opencv)
 
 # Generic GNU g++ compiler flags
-CXXFLAGS = -g -Wall -W $(INCLUDES) $(LIBS)
+CXXFLAGS = -g -Wall -W $(INCLUDES) $(LIBS) -O -O2 -O3
 
 # Files to compile
 SOURCES = $(wildcard *.cpp)
