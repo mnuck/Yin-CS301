@@ -12,7 +12,9 @@ using namespace cv;
 #define OCCLUDED_FROM_LEFT  2
 #define OCCLUDED_FROM_RIGHT 3
 
-#define TOLERANCE            64
+#define OCCLUSION_COST      -10
+#define HALF_PATCH_HEIGHT   2
+#define TOLERANCE           64
 
 ostream& operator<<(ostream& out, const Scalar& s){
   CvScalar cvs = CvScalar(s);
@@ -32,7 +34,7 @@ void intensity_normalize(const Mat& matrix, Mat& normalized) {
 }
 
 void compute_cost_matrix(const Mat& dsi, Mat& costs, Mat& paths, 
-                         const float occlusion_cost=50){
+                         const float occlusion_cost){
   costs = Mat(dsi.size(), CV_32FC1, Scalar(INFINITY));
   paths = Mat(dsi.size(), CV_8UC1, Scalar(NAN));
 
@@ -86,11 +88,12 @@ void compute_cost_matrix(const Mat& dsi, Mat& costs, Mat& paths,
 }
 
 double NCC(const Mat& f_hat, const Mat& g_hat){
-  return 1-f_hat.dot(g_hat);
+  return -f_hat.dot(g_hat);
 }
 
 void DSI_method(const Mat& left, const Mat& right, 
-                Mat& dest, const int half_patch_height=4){
+                Mat& dest, const int half_patch_height,
+                const float occlusion_cost){
   int patch_height = half_patch_height*2+1;
 
   dest = Mat(left.size(), CV_8U, Scalar(0));
@@ -103,6 +106,7 @@ void DSI_method(const Mat& left, const Mat& right,
     Mat l_row, r_row, l_patch, r_patch, l_patch_norm, r_patch_norm; 
     Mat dsi(left.cols, right.cols, CV_32FC1, Scalar(INFINITY));
 
+    Mat l_row_norm, r_row_norm;
     l_row = left.rowRange(i, i+patch_height);
     r_row = right.rowRange(i, i+patch_height);
 
@@ -116,15 +120,10 @@ void DSI_method(const Mat& left, const Mat& right,
       }
     }
 
-    double min, max;
-    minMaxLoc(dsi, &min, &max);
-    cout << "Computed row: " << i 
-         << " Max score: " << max
-         << " Min score: " << min << endl;
+    cout << "Computed row: " << i << endl;
 
     Mat costs, paths;
-    compute_cost_matrix(dsi, costs, paths);
-
+    compute_cost_matrix(dsi, costs, paths, occlusion_cost);
 
     // Draw Paths
     Mat temp(paths.size(), CV_8UC3);
@@ -182,9 +181,25 @@ void DSI_method(const Mat& left, const Mat& right,
       }
     }
 
+    // Fill in blanks.
+    unsigned char prev = 0;
+    for(int x = 0; x < dest.cols; x++){
+      unsigned char current = dest.at<unsigned char>(i, x);
+      if(current == 0){
+        dest.at<unsigned char>(i, x) = prev;
+      }
+      else {
+        prev = current;
+      }
+    }
+
     // Show path image
+    double min, max;
     Mat temp2, temp3;
-    costs.convertTo(temp2, CV_8U);
+    minMaxLoc(costs, &min, &max);
+    temp2 = (abs(min)+costs)/25000*255;
+
+    temp2.convertTo(temp2, CV_8U);
     dest.convertTo(temp3, CV_8U);
     imshow("pathWin", temp);
     imshow("costWin", temp2);
@@ -215,8 +230,8 @@ int main(int argc, char *argv[])
   cvtColor(right_image_color, right_image_gray, CV_BGR2GRAY);
 
   Mat left_image=left_image_gray, right_image=right_image_gray;
-  // GaussianBlur(left_image_gray, left_image, Size(3, 3), 30, 30);
-  // GaussianBlur(right_image_gray, right_image, Size(3, 3), 30, 30);
+  // GaussianBlur(left_image_gray, left_image, Size(3, 3), 15, 15);
+  // GaussianBlur(right_image_gray, right_image, Size(3, 3), 15, 15);
 
   // Make them 32 bit signed...
   left_image.convertTo(left_image, CV_32SC1);
@@ -230,10 +245,8 @@ int main(int argc, char *argv[])
        << "Width: " << width << endl
        << "Channels: " << channels << endl;    
 
-  // Mat match = match_epipolar_lines(left_image, right_image, 5);
-
   Mat dsi;
-  DSI_method(left_image, right_image, dsi, 3);
+  DSI_method(left_image, right_image, dsi, HALF_PATCH_HEIGHT, OCCLUSION_COST);
 
   // show the image
   namedWindow("dsiWin", CV_WINDOW_AUTOSIZE);
