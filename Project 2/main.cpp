@@ -16,6 +16,7 @@ using namespace cv;
 #define HALF_PATCH_HEIGHT   2
 #define TOLERANCE           64
 
+// Used to print Scalars to the screen for debugging.
 ostream& operator<<(ostream& out, const Scalar& s){
   CvScalar cvs = CvScalar(s);
   for(int i = 0; i < 4; i++)
@@ -24,6 +25,9 @@ ostream& operator<<(ostream& out, const Scalar& s){
   return out;
 }
 
+// Normalizes a matrix's intensity using its mean and standard deviation. 
+// \param matrix the matrix to normalize
+// \param normalized the matrix in which to store the normalized results.
 void intensity_normalize(const Mat& matrix, Mat& normalized) {
   Scalar mean, stddev;
   Mat stddev_mat;
@@ -33,6 +37,12 @@ void intensity_normalize(const Mat& matrix, Mat& normalized) {
   normalized = (matrix - mean) / stddev_mat;
 }
 
+// Computes costs for a DSI matrix and determines an optimal occlusion path
+// using dynamic programming.
+// \param dsi the DSI matrix used to compute costs
+// \param costs the matrix in which to store the costs
+// \param paths the matrix in which to store the calculated paths
+// \param occlusion_cost the cost for a move that causes occlusion
 void compute_cost_matrix(const Mat& dsi, Mat& costs, Mat& paths, 
                          const float occlusion_cost){
   costs = Mat(dsi.size(), CV_32FC1, Scalar(INFINITY));
@@ -51,8 +61,10 @@ void compute_cost_matrix(const Mat& dsi, Mat& costs, Mat& paths,
     paths.at<unsigned char>(0, i) = OCCLUDED_FROM_LEFT;
   }
 
+  // Itentify the goal pixel
   paths.at<unsigned char>(0, 0) = DONE;
 
+  // Calculate costs and paths
   float match_cost, occ_left_cost, occ_right_cost;
   for(int y = 1; y < dsi.rows; y++){
     for(int x = 1; x < dsi.cols; x++){
@@ -87,29 +99,39 @@ void compute_cost_matrix(const Mat& dsi, Mat& costs, Mat& paths,
   }
 }
 
+// Calculates the normalized cross coloration of the two matrices
+// \param f_hat a normalized matrix
+// \param g_hat a normalized image
+// \return a double, the dissimilarity of the matrices
 double NCC(const Mat& f_hat, const Mat& g_hat){
   return -f_hat.dot(g_hat);
 }
 
+// Calculates the disparity of two images using the DSI technique.
+// \param left the left image matrix
+// \param right the right image matrix
+// \param dest the matrix to store the solution in
+// \param half_patch_height half of the patch height to use
+// \param occlusion_cost the cost of an occluded pixel
 void DSI_method(const Mat& left, const Mat& right, 
                 Mat& dest, const int half_patch_height,
                 const float occlusion_cost){
   int patch_height = half_patch_height*2+1;
-
   dest = Mat(left.size(), CV_8U, Scalar(0));
 
   namedWindow("pathWin", CV_WINDOW_AUTOSIZE);
   namedWindow("costWin", CV_WINDOW_AUTOSIZE);
   namedWindow("accWin", CV_WINDOW_AUTOSIZE);
 
+  Mat dsi, l_row, r_row, l_patch, r_patch;
+  Mat l_patch_norm, r_patch_norm;
+  Mat costs, paths;
   for(int i = 0; i < left.rows-patch_height; i++) {
-    Mat l_row, r_row, l_patch, r_patch, l_patch_norm, r_patch_norm; 
-    Mat dsi(left.cols, right.cols, CV_32FC1, Scalar(INFINITY));
-
-    Mat l_row_norm, r_row_norm;
+    dsi = Mat(left.cols, right.cols, CV_32FC1, Scalar(INFINITY));
     l_row = left.rowRange(i, i+patch_height);
     r_row = right.rowRange(i, i+patch_height);
 
+    // Calculate image differences
     for(int j = 0; j < left.cols-patch_height; j++) {
       l_patch = l_row.colRange(j, j + patch_height);
       intensity_normalize(l_patch, l_patch_norm);
@@ -122,10 +144,9 @@ void DSI_method(const Mat& left, const Mat& right,
 
     cout << "Computed row: " << i << endl;
 
-    Mat costs, paths;
     compute_cost_matrix(dsi, costs, paths, occlusion_cost);
 
-    // Draw Paths
+    // Draw "paths" image
     Mat temp(paths.size(), CV_8UC3);
     for (int y = 0; y < dsi.rows; y++){
       for (int x = 0; x < dsi.cols; x++){
@@ -152,8 +173,11 @@ void DSI_method(const Mat& left, const Mat& right,
       }
     }
 
+    // Follow from the end to the beginning of the paths matrix to find
+    // the optimal path
     bool done = false;
-    int x=paths.cols-patch_height-1, y=paths.rows-patch_height-1;
+    int x=paths.cols-patch_height-1;
+    int y=paths.rows-patch_height-1;
     while(!done){
       Point pt = Point(x, y);
       unsigned char val = paths.at<unsigned char>(pt);
@@ -225,16 +249,16 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  Mat left_image_gray, right_image_gray;
-  cvtColor(left_image_color, left_image_gray, CV_BGR2GRAY);
-  cvtColor(right_image_color, right_image_gray, CV_BGR2GRAY);
-
-  Mat left_image=left_image_gray, right_image=right_image_gray;
+  // convert to grayscale
+  Mat left_image, right_image;
+  cvtColor(left_image_color, left_image, CV_BGR2GRAY);
+  cvtColor(right_image_color, right_image, CV_BGR2GRAY);
 
   // Make them 32 bit signed...
   left_image.convertTo(left_image, CV_32SC1);
   right_image.convertTo(right_image, CV_32SC1);
 
+  // Print image data
   int height    = left_image.rows;
   int width     = left_image.cols;
   int channels  = left_image.channels();
