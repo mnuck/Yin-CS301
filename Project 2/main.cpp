@@ -230,8 +230,6 @@ int main(int argc, char *argv[])
   cvtColor(right_image_color, right_image_gray, CV_BGR2GRAY);
 
   Mat left_image=left_image_gray, right_image=right_image_gray;
-  // GaussianBlur(left_image_gray, left_image, Size(3, 3), 15, 15);
-  // GaussianBlur(right_image_gray, right_image, Size(3, 3), 15, 15);
 
   // Make them 32 bit signed...
   left_image.convertTo(left_image, CV_32SC1);
