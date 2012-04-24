@@ -31,7 +31,7 @@ default: all
 all: stitcher
 
 # Executable's target
-stitcher: test.o
+stitcher: test.o util.o
 	${CXX} ${CXXFLAGS} $(LIBS) test.o -o $@
 	-@echo "._. <(done)"
 
