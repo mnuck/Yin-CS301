@@ -11,7 +11,7 @@ typedef struct
 {
   Mat color;
   Mat gray;
-  vector<Point2f> features;
+  vector<KeyPoint> features;
 } Frame;
 
 typedef struct
@@ -20,11 +20,11 @@ typedef struct
   Point2f b;
 } PointPair;
 
-void drawCirclesOnFeaturePoints(Mat& img, const vector<Point2f>& features)
+void drawCirclesOnFeaturePoints(Mat& img, const vector<KeyPoint>& features)
 {
   for(size_t i = 0; i < features.size(); i++)
   {
-    circle(img, features[i], 3, Scalar(0,255,0), -1, 8, 0);
+    circle(img, features[i].pt, 3, Scalar(0,255,0), -1, 8, 0);
   }
 }
 
@@ -76,13 +76,13 @@ PointPair find_best_match(const Frame& a, const Frame& b)
   PointPair closest;
   for(size_t i = 0; i < a.features.size(); i++)
   {
-    Point2f a_f = a.features[i];
+    Point2f a_f = a.features[i].pt;
     if (patch_in_bounds(a.gray, a_f))
     {
       Mat a_patch = get_patch(a.gray, a_f);
       for(size_t j = 0; j < b.features.size(); j++)
       {
-        Point2f b_f = b.features[i];
+        Point2f b_f = b.features[i].pt;
         if(patch_in_bounds(b.gray, b_f))
         {
           Mat b_patch = get_patch(b.gray, b_f);

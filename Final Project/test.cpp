@@ -13,6 +13,7 @@ int main(int, char**)
     return -1;
 
   Frame results;
+  SiftFeatureDetector detector;
 
   namedWindow("result", 1);
   namedWindow("display", 1);
@@ -26,35 +27,35 @@ int main(int, char**)
     cap >> current.color;
     
     // Slice one row and one column from each side
-    current.color = current.color(Range(1, current.color.rows-1), Range(1, current.color.cols-1));
+    current.color = current.color(Range(1, current.color.rows-1), 
+                                  Range(1, current.color.cols-1));
 
     cout << "Frame number: " << frame_number << endl;
 
     // Find features for current frame
     cvtColor(current.color, current.gray, CV_BGR2GRAY);
-    GaussianBlur(current.gray, current.gray, Size(9, 9), 2, 2);
-    goodFeaturesToTrack(current.gray, current.features, 10, .01, 10);
+    detector.detect(current.color, current.features); 
     
     if(frame_number > 0)
     {
       // Find features in the accumulated image
-      cvtColor(results.color, results.gray, CV_BGR2GRAY);
-      GaussianBlur(results.gray, results.gray, Size(9, 9), 2, 2);
-      goodFeaturesToTrack(results.gray, results.features, 10, .01, 10);
+      detector.detect(results.color, results.features); 
 
       PointPair most_similar = find_best_match(current, results);
 
       Mat display = results.color.clone();
       drawCirclesOnFeaturePoints(display, results.features);
-      circle(display, most_similar.a, 3, Scalar(255,0,0), -1, 8, 0);
-      circle(display, most_similar.b, 3, Scalar(0,0,255), -1, 8, 0);
-      cout << "most_similar.a: (" << most_similar.a.x << ", " << most_similar.a.y << ") "
-           << "most_similar.b: (" << most_similar.b.x << ", " << most_similar.b.y << ") " << endl;
+
+      // circle(display, most_similar.a, 3, Scalar(255,0,0), -1, 8, 0);
+      // circle(display, most_similar.b, 3, Scalar(0,0,255), -1, 8, 0);
+      cout << "most_similar.a: " << most_similar.a
+           << "most_similar.b: " << most_similar.a << endl;
+
       imshow("display", display);
 
-      if(dist(most_similar.a, most_similar.b))
+      if(dist(most_similar.a, most_similar.b) < 10)
       {
-        Mat old_results = results.color;
+        Mat old_results = results.color.clone();
         int row_diff = abs(most_similar.a.y - most_similar.b.y);
         int col_diff = abs(most_similar.a.x - most_similar.b.x);
         results.color = Mat::zeros(old_results.rows + row_diff, 
