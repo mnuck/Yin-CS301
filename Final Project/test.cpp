@@ -20,6 +20,14 @@ typedef struct
   Point2f b;
 } PointPair;
 
+void drawRectangleForRanges(Mat& img, const Range row_range, const Range col_range,
+  const Scalar& color)
+{
+  Point upper(col_range.start, row_range.start);
+  Point lower(col_range.end, row_range.end);
+  rectangle(img, upper, lower, color);
+}
+
 double dist(const Point2f& a, const Point2f& b)
 {
   return sqrt((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y));
@@ -86,7 +94,7 @@ PointPair find_best_match(const Frame& a, const Frame& b)
 
 int main(int, char**)
 {
-  VideoCapture cap("moon_test.avi"); // open the default camera
+  VideoCapture cap("moon_stripe1.avi"); // open the default camera
   if(!cap.isOpened())  // check if we succeeded
     return -1;
 
@@ -94,6 +102,7 @@ int main(int, char**)
   Frame previous;
 
   namedWindow("result", 1);
+  namedWindow("tmp", 1);
   namedWindow("display", 1);
   namedWindow("color", 1);
   namedWindow("gray", 1);
@@ -103,6 +112,8 @@ int main(int, char**)
     int waitTime = 30;
     Frame current;
     cap >> current.color;
+    current.color = current.color(Range(1, current.color.rows-1), 
+                                  Range(1, current.color.cols-1));
 
     Mat display = current.color.clone();
 
@@ -124,39 +135,73 @@ int main(int, char**)
       cout << "a: (" << most_similar.a.x << ", " << most_similar.a.y << ") "
            << "b: (" << most_similar.b.x << ", " << most_similar.b.y << ") " << endl;
 
-      if(dist(most_similar.a, most_similar.b) < 10)
+      if(dist(most_similar.a, most_similar.b) < 7)
       {
         tmp = result;
         int row_diff = abs(most_similar.a.y - most_similar.b.y);
         int col_diff = abs(most_similar.a.x - most_similar.b.x);
         result = Mat::zeros(tmp.rows + row_diff, tmp.cols + col_diff, tmp.type());
 
-        result(Range(0, tmp.rows), Range(0, tmp.cols)) += tmp;
+        Range current_row_range, current_col_range,
+          previous_row_range, previous_col_range;
+        if (most_similar.a.y > most_similar.b.y)
+        {
+          cout << "most_similar.a.y > most_similar.b.y" << endl;
+          current_row_range = Range(0, current.color.rows);
+          previous_row_range = Range(row_diff, tmp.rows + row_diff); 
+        }
+        else
+        {
+          cout << "most_similar.a.y <= most_similar.b.y" << endl;
+          current_row_range = Range(row_diff, row_diff+current.color.rows);
+          previous_row_range = Range(0, tmp.rows); 
+        }
 
-        result(Range(tmp.rows, tmp.rows+row_diff),
-               Range(col_diff, col_diff+current.color.cols)) +=
-          current.color(Range(current.color.rows - row_diff, current.color.rows), 
-                        Range::all());
+        if (most_similar.a.x > most_similar.b.x)
+        {
+          cout << "most_similar.a.x > most_similar.b.x" << endl;
+          current_col_range = Range(0, current.color.cols);
+          previous_col_range = Range(col_diff, tmp.cols + col_diff); 
+        }
+        else
+        {
+          cout << "most_similar.a.x <= most_similar.b.x" << endl;
+          current_col_range = Range(col_diff, col_diff+current.color.cols);
+          previous_col_range = Range(0, tmp.cols); 
+        }
+
+        result(previous_row_range, previous_col_range) += tmp;
+        result(current_row_range, current_col_range) -= 
+          result(current_row_range, current_col_range);
+        result(current_row_range, current_col_range) += current.color;
+        
+        drawRectangleForRanges(tmp, previous_row_range, 
+                               previous_col_range, Scalar(255, 0, 0));
+        drawRectangleForRanges(tmp, current_row_range, 
+                               current_col_range, Scalar(0, 0, 255));
+
+        previous = current;
       }
       else
       {
         cout << "Distance was greater than 10" << endl;
-        waitTime = 0;
+        waitTime = 30;
       }
     }
     else if(frame_number == 0)
     {
       result = current.color.clone();
+      tmp = result;
     }
 
-    previous = current;
 
     imshow("result", result);
+    imshow("tmp", tmp);
     imshow("display", display);
     imshow("color", current.color);
     imshow("gray", current.gray);
     
-    int key = waitKey(0);
+    int key = waitKey(waitTime);
     if (key == 27)
       break;
   }
