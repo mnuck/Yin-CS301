@@ -1,4 +1,6 @@
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include "cv.h"
 #include "highgui.h"
 
@@ -6,6 +8,8 @@ using namespace cv;
 using namespace std;
 
 #define PATCH_SIZE 10
+#define TOO_CLOSE 4
+#define WAIT_TIME 5
 
 typedef struct
 {
@@ -19,6 +23,15 @@ typedef struct
   Point2f a;
   Point2f b;
 } PointPair;
+
+void drawFeaturePoints(Mat& image, vector<Point2f> features, Scalar color)
+{
+  for(size_t i = 0; i < features.size(); i++)
+  {
+    Point2f feature_point = features[i];
+    circle(image, feature_point, 3, color, -1, 8, 0);
+  }
+}
 
 void drawRectangleForRanges(Mat& img, const Range row_range, const Range col_range,
                             const Scalar& color)
@@ -73,7 +86,8 @@ PointPair find_best_match(const Frame& a, const Frame& b)
     {
       Point2f b_f = b.features[i];
       double score = dist(a_f, b_f);
-      if(score < best_match && a_f.x > b_f.x && a_f.y > b_f.y)
+      if(score < best_match && score > TOO_CLOSE &&
+         a_f.x >= b_f.x && a_f.y >= b_f.y)
       {
         best_match = score;
         closest.a = a_f;
@@ -84,72 +98,63 @@ PointPair find_best_match(const Frame& a, const Frame& b)
   return closest;
 }
 
-int main(int, char**)
+Mat stitch_movie(const char* filename)
 {
-  VideoCapture cap("moon_stripe2.avi");
+  VideoCapture cap(filename);
   if(!cap.isOpened())
-    return -1;
+  {
+    stringstream ss;
+    ss << "Cannot open file: " << filename;
+    throw runtime_error(ss.str());
+  }
 
-  Mat result, previous_frame, previous_gray, tmp;
+  Mat result, previous_frame, previous_gray, old_result;
   Frame previous;
 
   namedWindow("result", 1);
   namedWindow("previous", 1);
-  namedWindow("tmp", 1);
+  namedWindow("old_result", 1);
   namedWindow("display", 1);
   namedWindow("color", 1);
   namedWindow("gray", 1);
 
   for(int frame_number = 0; ;frame_number++)
   {
-    cout << "13" << endl;
-    int waitTime = 30;
     Frame current;
     Mat display;
-    cout << "14" << endl;
+    
     cap >> current.color;
-    cout << "15" << endl;
+    
     if(current.color.empty())
     {
-      return 0;
+      return result;
     }
     current.color = current.color(Range(1, current.color.rows-1), 
                                   Range(1, current.color.cols-1));
 
-    cout << "1" << endl;
-
     display = current.color.clone();
       
     cvtColor(current.color, current.gray, CV_BGR2GRAY);
-    GaussianBlur(current.gray, current.gray, Size(7, 7), 2, 2);
-    goodFeaturesToTrack(current.gray, current.features, 10, .1, 20);
+    GaussianBlur(current.gray, current.gray, Size(5, 5), 4, 4);
+    goodFeaturesToTrack(current.gray, current.features, 20, .01, 20);
 
-    cout << "2" << endl;
-    
     if(frame_number > 0)
     {
-      for(size_t i = 0; i < current.features.size(); i++)
-      {
-        Point2f feature_point = current.features[i];
-        circle(display, feature_point, 3, Scalar(0,255,0), -1, 8, 0);
-      }
+      drawFeaturePoints(display, current.features, Scalar(0, 255, 0));
+      drawFeaturePoints(display, previous.features, Scalar(255, 255, 0));
 
       PointPair most_similar = find_best_match(current, previous);
       circle(display, most_similar.a, 3, Scalar(0,0,255), -1, 8, 0);
       circle(display, most_similar.b, 3, Scalar(255,0,0), -1, 8, 0);
       cout << "a: " << most_similar.a << " b:" << most_similar.b << endl;
 
-      cout << "3" << endl;
-
       int distance = dist(most_similar.a, most_similar.b);
       if(distance < 15 && distance > 0)
       {
-        tmp = result;
+        old_result = result;
         int row_diff = abs(most_similar.a.y - most_similar.b.y);
         int col_diff = abs(most_similar.a.x - most_similar.b.x);
-        result = Mat::zeros(tmp.rows + row_diff, tmp.cols + col_diff, tmp.type());
-
-        cout << "4" << endl;
+        result = Mat::zeros(old_result.rows + row_diff, old_result.cols + col_diff, old_result.type());
 
         Range current_row_range, current_col_range,
           previous_row_range, previous_col_range;
@@ -157,76 +162,82 @@ int main(int, char**)
         {
           cout << "most_similar.a.y > most_similar.b.y" << endl;
           current_row_range = Range(0, current.color.rows);
-          previous_row_range = Range(row_diff, tmp.rows + row_diff); 
+          previous_row_range = Range(row_diff, old_result.rows + row_diff); 
         }
         else
         {
           cout << "most_similar.a.y <= most_similar.b.y" << endl;
           current_row_range = Range(row_diff, row_diff+current.color.rows);
-          previous_row_range = Range(0, tmp.rows); 
+          previous_row_range = Range(0, old_result.rows); 
         }
-
-        cout << "5" << endl;        
 
         if (most_similar.a.x > most_similar.b.x)
         {
           cout << "most_similar.a.x > most_similar.b.x" << endl;
           current_col_range = Range(0, current.color.cols);
-          previous_col_range = Range(col_diff, tmp.cols + col_diff); 
+          previous_col_range = Range(col_diff, old_result.cols + col_diff); 
         }
         else
         {
           cout << "most_similar.a.x <= most_similar.b.x" << endl;
           current_col_range = Range(col_diff, col_diff+current.color.cols);
-          previous_col_range = Range(0, tmp.cols); 
+          previous_col_range = Range(0, old_result.cols); 
         }
 
-        cout << "6" << endl;
-
-        result(previous_row_range, previous_col_range) += tmp;
+        result(previous_row_range, previous_col_range) += old_result;
         result(current_row_range, current_col_range) -= 
           result(current_row_range, current_col_range);
         result(current_row_range, current_col_range) += current.color;
         
-        cout << "7" << endl;
-
-        drawRectangleForRanges(tmp, previous_row_range, 
+        drawRectangleForRanges(old_result, previous_row_range, 
                                previous_col_range, Scalar(255, 0, 0));
-        drawRectangleForRanges(tmp, current_row_range, 
+        drawRectangleForRanges(old_result, current_row_range, 
                                current_col_range, Scalar(0, 0, 255));
-
-        cout << "8" << endl;
 
         previous = current;
       }
       else
       {
         cout << "Distance was greater than 10" << endl;
+        previous = current;
       }
     }
     else if(frame_number == 0)
     {
-      cout << "9" << endl;
       result = current.color.clone();
-      cout << "10" << endl;
-      tmp = result;
+      
+      old_result = result;
       previous = current;
     }
 
-    cout << "11" << endl;
+    
     imshow("result", result);
-    imshow("tmp", tmp);
+    imshow("old_result", old_result);
     imshow("display", display);
     imshow("color", current.color);
     imshow("gray", current.gray);
     
-    cout << "12" << endl;
-
-    int key = waitKey(30);
+    int key = waitKey(WAIT_TIME);
     if (key == 27)
       break;
   }
 
+  return result;
+}
+
+int main(int , char** )
+{
+  string files[11] = {"moon_stripe3.avi", "moon_stripe8.avi", "moon_stripe1.avi", 
+                      "moon_stripe4.avi", "moon_stripe9.avi", "moon_stripe10.avi", 
+                      "moon_stripe5.avi", "moon_stripe11.avi", "moon_stripe6.avi",
+                      "moon_stripe2.avi", "moon_stripe7.avi"};
+  
+  vector<Mat> stitched_swipes;
+  for(size_t i = 0; i < 11; i++)
+  {
+    Mat image = stitch_movie(files[i].c_str());
+    imwrite(files[i]+".png", image);
+  }
 
   return 0;
 }
