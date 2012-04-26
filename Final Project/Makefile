@@ -31,8 +31,8 @@ default: all
 all: stitcher
 
 # Executable's target
-stitcher: test.o
-	${CXX} ${CXXFLAGS} $(LIBS) test.o -o $@
+stitcher: main.o
+	${CXX} ${CXXFLAGS} $(LIBS) $< -o $@
 	-@echo "._. <(done)"
 
 # Gets rid of objects and executable
