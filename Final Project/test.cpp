@@ -11,6 +11,9 @@ using namespace std;
 #define TOO_CLOSE 4
 #define WAIT_TIME 5
 
+bool should_wait = true;
+
+// Holds an image with its corresponding features
 typedef struct
 {
   Mat color;
@@ -18,12 +21,15 @@ typedef struct
   vector<Point2f> features;
 } Frame;
 
+// Used by best_match to return more than one Point
 typedef struct
 {
   Point2f a;
   Point2f b;
 } PointPair;
 
+
+// Draws a vector of points on an image
 void drawFeaturePoints(Mat& image, vector<Point2f> features, Scalar color)
 {
   for(size_t i = 0; i < features.size(); i++)
@@ -33,6 +39,7 @@ void drawFeaturePoints(Mat& image, vector<Point2f> features, Scalar color)
   }
 }
 
+// Draws a rectange on an image given row/column ranges
 void drawRectangleForRanges(Mat& img, const Range row_range, const Range col_range,
                             const Scalar& color)
 {
@@ -41,11 +48,15 @@ void drawRectangleForRanges(Mat& img, const Range row_range, const Range col_ran
   rectangle(img, upper, lower, color);
 }
 
+// Calculates Euclidian distance between points
 double dist(const Point2f& a, const Point2f& b)
 {
   return sqrt((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y));
 }
 
+// Determines if a patch can be created at the point pt for the matris
+// returns True if the patch can be created, returns false if the patch
+// would be out of bounds
 bool patch_in_bounds(const Mat& matrix, const Point2f& pt)
 {
   int x = pt.x, y = pt.y, rows = matrix.rows, cols = matrix.cols;
@@ -53,6 +64,7 @@ bool patch_in_bounds(const Mat& matrix, const Point2f& pt)
     (y >= PATCH_SIZE) && (y < rows-PATCH_SIZE);
 }
 
+// Calculates the NCC score for a pair of patches (matrices)
 double NCC_score(const Mat& orig_a, const Mat& orig_b)
 {
   Scalar mean, stddev;
@@ -69,12 +81,16 @@ double NCC_score(const Mat& orig_a, const Mat& orig_b)
   return 1-norm_a.dot(norm_b);
 }
 
+// Grabs a patch from a matrix at point pt
 Mat get_patch(const Mat& matrix, const Point2f pt)
 {
   return matrix(Range(pt.y-PATCH_SIZE, pt.y+PATCH_SIZE), 
                 Range(pt.x-PATCH_SIZE, pt.x+PATCH_SIZE));
 }
 
+// Finds pairs of points that match the best given two frames
+// with associated feature lists by calculating distances
+// between points
 PointPair find_best_match(const Frame& a, const Frame& b)
 {
   double best_match = INFINITY;
@@ -98,6 +114,7 @@ PointPair find_best_match(const Frame& a, const Frame& b)
   return closest;
 }
 
+// Stitches a movie together given a filename
 Mat stitch_movie(const char* filename)
 {
   VideoCapture cap(filename);
@@ -111,6 +128,7 @@ Mat stitch_movie(const char* filename)
   Mat result, previous_frame, previous_gray, old_result;
   Frame previous;
 
+  // Create windows for displaying
   namedWindow("result", 1);
   namedWindow("previous", 1);
   namedWindow("old_result", 1);
@@ -123,17 +141,22 @@ Mat stitch_movie(const char* filename)
     Frame current;
     Mat display;
     
+    // Read in a frame
     cap >> current.color;
     
     if(current.color.empty())
     {
+      // If it's empty, jump ship
       return result;
     }
+
+    // Trim of black border
     current.color = current.color(Range(1, current.color.rows-1), 
                                   Range(1, current.color.cols-1));
 
     display = current.color.clone();
       
+    // Convert to gray and find features
     cvtColor(current.color, current.gray, CV_BGR2GRAY);
     GaussianBlur(current.gray, current.gray, Size(5, 5), 4, 4);
     goodFeaturesToTrack(current.gray, current.features, 20, .01, 20);
@@ -143,11 +166,13 @@ Mat stitch_movie(const char* filename)
       drawFeaturePoints(display, current.features, Scalar(0, 255, 0));
       drawFeaturePoints(display, previous.features, Scalar(255, 255, 0));
 
+      // Find best matched features
       PointPair most_similar = find_best_match(current, previous);
       circle(display, most_similar.a, 3, Scalar(0,0,255), -1, 8, 0);
       circle(display, most_similar.b, 3, Scalar(255,0,0), -1, 8, 0);
       cout << "a: " << most_similar.a << " b:" << most_similar.b << endl;
 
+      // Perform translation based on the location of the best matched features
       int distance = dist(most_similar.a, most_similar.b);
       if(distance < 15 && distance > 0)
       {
@@ -184,6 +209,7 @@ Mat stitch_movie(const char* filename)
           previous_col_range = Range(0, old_result.cols); 
         }
 
+        // Stitch frames together
         result(previous_row_range, previous_col_range) += old_result;
         result(current_row_range, current_col_range) -= 
           result(current_row_range, current_col_range);
@@ -210,12 +236,19 @@ Mat stitch_movie(const char* filename)
       previous = current;
     }
 
-    
+    // Show results so far
     imshow("result", result);
     imshow("old_result", old_result);
     imshow("display", display);
     imshow("color", current.color);
     imshow("gray", current.gray);
+
+    // Wait for the user
+    if (should_wait)
+    {
+      should_wait = false;
+      waitKey(0);
+    }
     
     int key = waitKey(WAIT_TIME);
     if (key == 27)
@@ -225,18 +258,27 @@ Mat stitch_movie(const char* filename)
   return result;
 }
 
-int main(int , char** )
+int main(int argc, char** argv)
 {
   string files[11] = {"moon_stripe3.avi", "moon_stripe8.avi", "moon_stripe1.avi", 
                       "moon_stripe4.avi", "moon_stripe9.avi", "moon_stripe10.avi", 
                       "moon_stripe5.avi", "moon_stripe11.avi", "moon_stripe6.avi",
                       "moon_stripe2.avi", "moon_stripe7.avi"};
-  
-  vector<Mat> stitched_swipes;
-  for(size_t i = 0; i < 11; i++)
+
+  if(argc == 2)
   {
-    Mat image = stitch_movie(files[i].c_str());
-    imwrite(files[i]+".png", image);
+    Mat image = stitch_movie(argv[1]);
+    imwrite("output.png", image);
+    waitKey(0);
+  }
+  else
+  {
+    vector<Mat> stitched_swipes;
+    for(size_t i = 0; i < 11; i++)
+    {
+      Mat image = stitch_movie(files[i].c_str());
+      imwrite(files[i]+".png", image);
+    }
   }
 
   return 0;
